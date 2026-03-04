@@ -4,11 +4,12 @@ This guide explains the `final_model_v2.nlogox` simulation in plain language.
 
 ## What this model is trying to answer
 
-The core hypothesis is:
+The model tests two hypotheses:
 
-If the Mexican force had been in a more defensive, concentrated posture (instead of dispersed camp posture) when the Texians attacked, would the battle outcome have changed?
+1. If the Mexican force had been in a more defensive, concentrated posture (instead of dispersed camp posture) when the Texians attacked, would the battle outcome have changed?
+2. If General Cos' 500 reinforcements had arrived earlier and been less fatigued, would the additional effective manpower have changed the battle?
 
-The `mexican-concentration` slider is the main test variable.
+The `mexican-concentration` and `cos-fatigue` sliders are the test variables.
 
 ## Main agents in the simulation
 
@@ -19,10 +20,14 @@ The `mexican-concentration` slider is the main test variable.
 - Have health and morale values that change during combat.
 
 ### 2) Mexican soldiers (`mexicans`)
+- Split into two subpopulations:
+  - **Main body** (750 troops): Sesma, Castrillon, and other units already encamped.
+  - **Cos' reinforcements** (500 troops): General Cos' column that arrived after a forced march. Visually distinguished by lighter violet color.
 - Start near camp/defensive areas on the right side.
 - Placement depends on `mexican-concentration`:
   - higher concentration = more tight formation,
   - lower concentration = more dispersed camp layout.
+- Cos' troops are placed at the camp periphery (less integrated into positions), especially at high fatigue.
 - Have command delay (activation delay), morale, and state (`fighting`, `shaken`, `routing`).
 - Can be captured during rout/collapse dynamics.
 
@@ -94,12 +99,38 @@ The battle uses a phase system:
 - During collapse/rout, Mexican units near Texians and with low morale are increasingly likely to surrender/be captured.
 - This is intentional so late battle outcomes are not only KIA-based.
 
-## How the slider works
+## How the sliders work
 
-`mexican-concentration` (0 to 100) acts as defensive readiness:
+### `mexican-concentration` (0 to 100)
+
+Acts as defensive readiness for the entire force:
 
 - **Low values**: dispersed setup, longer command delays, weaker early resistance, faster morale collapse.
 - **High values**: tighter defensive posture, faster reaction, stronger morale retention, more resistance to opening shock.
+
+### `cos-fatigue` (0 to 100)
+
+Models the exhaustion level of General Cos' 500 reinforcement troops:
+
+- **100 (historical)**: Cos' troops just completed a forced march and arrived hours before battle. They suffer maximum penalties across all systems.
+- **50**: Cos arrived the previous evening. Troops had partial rest and some integration into camp positions.
+- **0**: Cos arrived days earlier. Troops are fully rested and integrated, fighting at full effectiveness alongside the main body.
+
+Fatigue affects Cos' troops in six ways (all scaling linearly with the slider):
+
+| System | At fatigue 0 | At fatigue 100 |
+|--------|-------------|----------------|
+| Starting morale | Same as main body | -30 penalty |
+| Morale decay rate | Normal | +0.25/tick additional decay |
+| Activation delay | Readiness-based only | +12-14 extra ticks |
+| Firefight hit probability | Normal | -40% penalty |
+| Melee damage | Normal | -30% penalty |
+| Movement speed | Normal | -20% penalty |
+| Shaken threshold | morale < 28 | morale < 36 (breaks sooner) |
+| Routing threshold | morale < 18 | morale < 24 (routes sooner) |
+| Rally threshold | morale > 42 | morale > 50 (harder to rally) |
+
+At high fatigue, Cos' troops also have fewer agents in concentrated positions (fatigue reduces concentration integration by up to 50%), meaning more of them start dispersed even when `mexican-concentration` is high.
 
 ## Outputs to watch
 
@@ -108,6 +139,7 @@ Interface monitors include:
 - `Texian Casualties`
 - `Mexican KIA`
 - `Mexican Captured`
+- `Cos Remaining` — how many of Cos' 500 troops are still alive/uncaptured
 - `Mex Morale`
 - `Tex Morale`
 - `Battle Duration`
@@ -117,18 +149,26 @@ For your hypothesis, compare distributions (many runs), not one run.
 
 ## Suggested experiment workflow
 
-1. Pick slider values (for example: 0, 20, 40, 60, 80, 100).
-2. Run many repetitions per value (for example: 50 to 200).
-3. Record medians and spread for:
-   - Texian casualties,
-   - Mexican KIA,
-   - Mexican captured,
-   - battle duration.
-4. Compare how outcomes shift with concentration.
+### Baseline sweep (concentration only)
+1. Set `cos-fatigue` to 100 (historical).
+2. Sweep `mexican-concentration` from 0 to 100 in increments of 10.
+3. Run 50-200 repetitions per value.
+4. Record medians and spread for Texian casualties, Mexican KIA, Mexican captured, battle duration.
+
+### Cos fatigue sweep (isolating fatigue effect)
+1. Fix `mexican-concentration` at a chosen value (e.g., 30 for historical-ish posture).
+2. Sweep `cos-fatigue` from 0 to 100 in increments of 10.
+3. Record the same metrics plus `Cos Remaining` at battle end.
+
+### 2D interaction sweep
+1. Sweep both sliders simultaneously (e.g., each at 0, 25, 50, 75, 100).
+2. Look for nonlinear interaction effects — does rested Cos + high concentration create a qualitatively different outcome?
 
 From the Command Center, you can run batch trials with:
 
 `run-experiment 50`
+
+The experiment log now includes `cos-fatigue` and `cos-remaining` values.
 
 ## Known limitations
 
@@ -141,5 +181,6 @@ From the Command Center, you can run batch trials with:
 
 Use this model as an experimental sandbox:
 
-- It is best for testing directional effects of readiness/defensive concentration.
+- It is best for testing directional effects of readiness/defensive concentration and Cos' reinforcement fatigue.
+- The two-slider design allows isolating each factor and testing their interaction.
 - It is not yet a definitive quantitative reconstruction of San Jacinto.

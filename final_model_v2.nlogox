@@ -21,7 +21,7 @@ breed [ texian-cannons texian-cannon ]
 breed [ mexican-cannons mexican-cannon ]
 
 texians-own [ health morale state suppressed-ticks ]
-mexicans-own [ health morale state activation-delay suppressed-ticks ]
+mexicans-own [ health morale state activation-delay suppressed-ticks is-cos-troop? fatigue-modifier ]
 mexican-cannons-own [ shots-left reload-timer ]
 texian-cannons-own [ reload-timer ]
 
@@ -69,6 +69,7 @@ end
 
 to setup-troops-v2
   let readiness (mexican-concentration / 100)
+  let fatigue-norm (cos-fatigue / 100)
 
   create-texians 935 [
     set color red
@@ -80,8 +81,10 @@ to setup-troops-v2
     set suppressed-ticks 0
   ]
 
-  let num-concentrated round (1250 * readiness)
-  let num-dispersed 1250 - num-concentrated
+  ;; Main body: 750 troops (Sesma, Castrillon, etc.)
+  let main-total 750
+  let num-concentrated round (main-total * readiness)
+  let num-dispersed main-total - num-concentrated
 
   let front-rank round (num-concentrated * 0.62)
   let reserve-rank num-concentrated - front-rank
@@ -95,6 +98,8 @@ to setup-troops-v2
     set state "fighting"
     set activation-delay max list 0 (round ((1 - readiness) * 12) + random 4)
     set suppressed-ticks 0
+    set is-cos-troop? false
+    set fatigue-modifier 0
   ]
 
   create-mexicans reserve-rank [
@@ -106,6 +111,8 @@ to setup-troops-v2
     set state "fighting"
     set activation-delay max list 0 (round ((1 - readiness) * 13) + random 5)
     set suppressed-ticks 0
+    set is-cos-troop? false
+    set fatigue-modifier 0
   ]
 
   create-mexicans num-dispersed [
@@ -117,6 +124,43 @@ to setup-troops-v2
     set state "fighting"
     set activation-delay max list 0 (round ((1 - readiness) * 26) + random 10)
     set suppressed-ticks 0
+    set is-cos-troop? false
+    set fatigue-modifier 0
+  ]
+
+  ;; Cos' reinforcements: 500 troops, arrived after forced march
+  ;; Fatigue slider controls how exhausted they are (100 = just arrived, 0 = fully rested)
+  let cos-total 500
+  let cos-concentrated round (cos-total * readiness * (1 - fatigue-norm * 0.5))
+  let cos-dispersed cos-total - cos-concentrated
+
+  create-mexicans cos-concentrated [
+    set color violet + 2
+    set shape "person"
+    ;; Cos' troops positioned at camp periphery (less integrated)
+    setxy (8 + random-float 4) (-10 + random-float 20)
+    set health 100
+    set morale (38 + (readiness * 24) + random-float 10) - (30 * fatigue-norm)
+    set state "fighting"
+    ;; Fatigue adds extra activation delay on top of readiness-based delay
+    set activation-delay max list 0 (round ((1 - readiness) * 14) + round (fatigue-norm * 12) + random 5)
+    set suppressed-ticks 0
+    set is-cos-troop? true
+    set fatigue-modifier fatigue-norm
+  ]
+
+  create-mexicans cos-dispersed [
+    set color violet + 2
+    set shape "person"
+    ;; Dispersed Cos troops: sleeping, resting, scattered at edges
+    setxy (7 + random-float 8) random-ycor
+    set health 100
+    set morale (32 + (readiness * 14) + random-float 10) - (30 * fatigue-norm)
+    set state "fighting"
+    set activation-delay max list 0 (round ((1 - readiness) * 26) + round (fatigue-norm * 14) + random 10)
+    set suppressed-ticks 0
+    set is-cos-troop? true
+    set fatigue-modifier fatigue-norm
   ]
 
   create-texian-cannons 2 [
@@ -260,6 +304,9 @@ to move-mexicans
     if state = "shaken" [ set step 0.24 ]
     if state = "routing" [ set step 0.52 ]
 
+    ;; Fatigue reduces movement speed (up to -20%)
+    set step step * (1 - fatigue-modifier * 0.20)
+
     if suppressed-ticks > 0 [
       set suppressed-ticks suppressed-ticks - 1
       set step step * 0.6
@@ -324,6 +371,8 @@ to resolve-firefight
     let target one-of ((texians in-radius 2.8) with [state = "fighting" or state = "shaken"])
     if target != nobody [
       let base-hit 0.07 + (mexican-readiness * 0.14)
+      ;; Fatigue degrades accuracy (up to -40%)
+      set base-hit base-hit * (1 - fatigue-modifier * 0.40)
       if battle-phase = "surprise" [ set base-hit base-hit * (0.35 + (0.50 * mexican-readiness)) ]
       if state = "shaken" [ set base-hit base-hit * 0.70 ]
       let target-cover [cover-mod] of ([patch-here] of target)
@@ -358,6 +407,8 @@ to resolve-melee
     let target one-of ((texians in-radius 1.2) with [state = "fighting" or state = "shaken"])
     if target != nobody [
       let dmg (4 + random 6 + round (3 * mexican-readiness))
+      ;; Fatigue reduces melee damage (up to -30%)
+      set dmg dmg * (1 - fatigue-modifier * 0.30)
       if battle-phase = "surprise" [ set dmg dmg * (0.45 + (0.40 * mexican-readiness)) ]
       if state = "shaken" [ set dmg dmg * 0.75 ]
       ask target [
@@ -435,16 +486,24 @@ to update-morale-and-state
   ask mexicans [
     let nearby-enemies count ((texians in-radius 2) with [state != "surrendered"])
     let nearby-friends count ((other mexicans in-radius 2) with [state != "surrendered"])
-    set morale morale - (0.25 + ((1 - mexican-readiness) * 0.25)) + (nearby-friends * 0.02) - (nearby-enemies * 0.07)
+    ;; Cos' fatigued troops suffer faster morale decay
+    let fatigue-decay-penalty fatigue-modifier * 0.25
+    set morale morale - (0.25 + ((1 - mexican-readiness) * 0.25) + fatigue-decay-penalty) + (nearby-friends * 0.02) - (nearby-enemies * 0.07)
     if battle-phase = "surprise" [ set morale morale - (0.35 + ((1 - mexican-readiness) * 0.35)) ]
     if activation-delay > 0 [ set morale morale - (0.10 + ((1 - mexican-readiness) * 0.15)) ]
     if battle-phase = "rout" [ set morale morale - 1.1 ]
     if morale > 100 [ set morale 100 ]
     if morale < 0 [ set morale 0 ]
 
-    if morale < 28 and state = "fighting" [ set state "shaken" ]
-    if morale < 18 and state != "routing" [ set state "routing" ]
-    if morale > 42 and state = "shaken" and battle-phase = "contested" [
+    ;; Fatigued troops break sooner: shaken threshold shifts from 28 up to 36
+    let shaken-threshold 28 + (fatigue-modifier * 8)
+    ;; Routing threshold shifts from 18 up to 24
+    let routing-threshold 18 + (fatigue-modifier * 6)
+    if morale < shaken-threshold and state = "fighting" [ set state "shaken" ]
+    if morale < routing-threshold and state != "routing" [ set state "routing" ]
+    ;; Fatigued troops are harder to rally
+    let rally-threshold 42 + (fatigue-modifier * 8)
+    if morale > rally-threshold and state = "shaken" and battle-phase = "contested" [
       set state "fighting"
     ]
   ]
@@ -545,9 +604,11 @@ to run-experiment [runs]
     ]
     show (word "run " (i + 1)
          " concentration=" mexican-concentration
+         " cos-fatigue=" cos-fatigue
          " tex-kia=" texian-casualties
          " mex-kia=" mexican-casualties
          " mex-captured=" mexican-captured
+         " cos-remaining=" count mexicans with [is-cos-troop?]
          " duration=" battle-duration)
     set i i + 1
   ]
@@ -557,22 +618,32 @@ end]]></code>
     <button x="20" y="30" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="55" display="setup">setup</button>
     <button x="90" y="30" height="40" disableUntilTicks="false" forever="true" kind="Observer" width="55" display="go">go</button>
     <slider x="20" step="1" y="95" max="100" width="250" display="mexican-concentration" height="50" min="0" direction="Horizontal" default="100.0" variable="mexican-concentration"></slider>
-    <monitor x="20" precision="17" y="160" height="60" fontSize="11" width="100" display="Texian Casualties">texian-casualties</monitor>
-    <monitor x="135" precision="17" y="160" height="60" fontSize="11" width="100" display="Mexican KIA">mexican-casualties</monitor>
-    <monitor x="20" precision="17" y="230" height="60" fontSize="11" width="100" display="Mexican Captured">mexican-captured</monitor>
-    <monitor x="135" precision="2" y="230" height="60" fontSize="11" width="100" display="Mex Morale">mexican-side-morale</monitor>
-    <monitor x="20" precision="2" y="300" height="60" fontSize="11" width="100" display="Tex Morale">texian-side-morale</monitor>
-    <monitor x="135" precision="17" y="300" height="60" fontSize="11" width="100" display="Battle Duration">battle-duration</monitor>
-    <monitor x="20" precision="17" y="370" height="60" fontSize="11" width="215" display="Battle Phase">battle-phase</monitor>
+    <slider x="20" step="1" y="145" max="100" width="250" display="cos-fatigue" height="50" min="0" direction="Horizontal" default="100.0" variable="cos-fatigue"></slider>
+    <monitor x="20" precision="17" y="210" height="60" fontSize="11" width="100" display="Texian Casualties">texian-casualties</monitor>
+    <monitor x="135" precision="17" y="210" height="60" fontSize="11" width="100" display="Mexican KIA">mexican-casualties</monitor>
+    <monitor x="20" precision="17" y="280" height="60" fontSize="11" width="100" display="Mexican Captured">mexican-captured</monitor>
+    <monitor x="135" precision="2" y="280" height="60" fontSize="11" width="100" display="Mex Morale">mexican-side-morale</monitor>
+    <monitor x="20" precision="2" y="350" height="60" fontSize="11" width="100" display="Tex Morale">texian-side-morale</monitor>
+    <monitor x="135" precision="17" y="350" height="60" fontSize="11" width="100" display="Battle Duration">battle-duration</monitor>
+    <monitor x="250" precision="17" y="210" height="60" fontSize="11" width="100" display="Cos Remaining">count mexicans with [is-cos-troop?]</monitor>
+    <monitor x="20" precision="17" y="420" height="60" fontSize="11" width="215" display="Battle Phase">battle-phase</monitor>
   </widgets>
   <info>## WHAT IS IT?
 
 This model is a stochastic, hypothesis-testing simulation of the Battle of San Jacinto.
-It asks: if the Mexican force had been more concentrated in defensive positioning instead of dispersed camp posture, would outcomes have changed?
+It asks two questions:
+1. If the Mexican force had been more concentrated in defensive positioning, would outcomes have changed?
+2. If General Cos' 500 reinforcements had arrived earlier (less fatigued), would that have changed the battle?
 
 ## HOW IT WORKS
 
-The slider `mexican-concentration` controls Mexican defensive readiness. Higher values produce tighter formation, higher starting morale, and shorter reaction delays.
+Two sliders control the key variables:
+- `mexican-concentration` controls Mexican defensive readiness. Higher values produce tighter formation, higher starting morale, and shorter reaction delays.
+- `cos-fatigue` (0-100) models the exhaustion of General Cos' 500 reinforcement troops who historically arrived after a forced march only hours before the battle. At 100 (historical), they are severely fatigued; at 0 they are fully rested as if they arrived days earlier.
+
+Cos' fatigue affects: starting morale (-30 penalty at max), morale decay rate (+0.25/tick at max), activation delay (+12-14 extra ticks at max), hit probability (-40% at max), melee damage (-30% at max), movement speed (-20% at max), and state transition thresholds (break sooner, harder to rally).
+
+Cos' troops are visually distinguished by a lighter violet color.
 
 Combat is asymmetric and phase-based:
 - surprise
@@ -584,10 +655,10 @@ Outcomes include casualties and captures (especially during rout/surrender).
 
 ## HOW TO USE IT
 
-1. Set `mexican-concentration`.
+1. Set `mexican-concentration` and `cos-fatigue`.
 2. Click `setup`.
 3. Click `go`.
-4. Track KIA, captures, morale, duration, and battle phase monitors.
+4. Track KIA, captures, morale, duration, Cos Remaining, and battle phase monitors.
 
 You can also run repeated stochastic trials from the Command Center:
 
@@ -598,18 +669,21 @@ You can also run repeated stochastic trials from the Command Center:
 - At low concentration, Mexican command delay and morale collapse are more common.
 - At high concentration, Mexican resistance is stronger and collapse tends to occur later.
 - Captures become a major part of outcomes in rout conditions.
+- Cos' troops at high fatigue tend to rout before the main body, potentially dragging overall morale down.
+- The `Cos Remaining` monitor shows how quickly Cos' contingent is eliminated or captured.
 
 ## THINGS TO TRY
 
-- Sweep concentration from 0 to 100 in increments of 10 and record medians.
-- Compare outcome spread (not just averages) across settings.
-- Increase trial counts (50-200 runs per setting) before drawing conclusions.
+- Sweep concentration from 0 to 100 with cos-fatigue fixed at 100 (historical baseline).
+- Then sweep cos-fatigue from 0 to 100 with concentration fixed, to isolate the fatigue effect.
+- Run a 2D sweep of both sliders to find interaction effects.
+- Compare whether Cos' troops at fatigue 0 + high concentration creates a qualitatively different outcome (stalled collapse, higher Texian casualties).
 
 ## EXTENDING THE MODEL
 
 - Add explicit leader agents and localized command radii.
-- Split Mexican force into subunits with different training states.
 - Add BehaviorSpace experiments and CSV export.
+- Model Cos' arrival time as a separate variable (troops arrive mid-battle at very late timing).
 
 ## CREDITS AND REFERENCES
 
