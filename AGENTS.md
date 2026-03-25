@@ -2,6 +2,12 @@
 
 This repo contains a NetLogo battle simulation plus headless batch-run tooling.
 
+## Documentation Rule
+
+It is the agent's job, whether Claude, Codex, or any other coding agent, to keep all Markdown documentation in this repo up to date whenever model behavior, scripts, outputs, assumptions, thresholds, or workflows change.
+
+If you change the model or batch-testing workflow, you must review and update every affected Markdown file before finishing the task. That includes `README.md`, `SAN_JACINTO_MODEL_GUIDE.md`, `TODOS.md`, and this `AGENTS.md` when relevant.
+
 ## Files That Matter
 
 - `san_jacinto_battle.nlogox`: canonical NetLogo model.
