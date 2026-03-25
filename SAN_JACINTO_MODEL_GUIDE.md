@@ -75,6 +75,24 @@ The battle uses a phase system:
 5. `ended`
    - Simulation stop state.
 
+### Exact battle phase transition numbers
+
+- `surprise` lasts for `34 - round(mexican-concentration / 6)` ticks, with a floor of `12`.
+- That means surprise lasts `34` ticks at concentration `0`, `25` ticks at concentration `50`, and `17` ticks at concentration `100`.
+- Once `ticks >= surprise-ticks`, the model shifts from `surprise` to `contested`.
+- The model also starts the real combat clock only when Texians cross the ridgeline. Before that breach, Mexican movement/fire/morale degradation are largely paused even if the phase label is already `surprise`.
+- `contested` shifts to `collapse` when either:
+- Mexican side morale falls below `42 - (mexican-readiness * 12)`, where `mexican-readiness = mexican-concentration / 100`.
+- Or the Mexican routing share rises above `0.14 + (mexican-readiness * 0.16)`.
+- In concrete terms, the collapse morale threshold is `42` at concentration `0`, `36` at concentration `50`, and `30` at concentration `100`.
+- The collapse routing-share threshold is `0.14` at concentration `0`, `0.22` at concentration `50`, and `0.30` at concentration `100`.
+- `collapse` shifts to `rout` when Mexican troops still in `fighting` or `shaken` fall below `250 + ((1 - mexican-readiness) * 80)`.
+- That means rout begins below `330` active Mexican troops at concentration `0`, below `290` at concentration `50`, and below `250` at concentration `100`.
+- The battle ends with a Texian win if phase is `rout` and fewer than `50` Mexicans remain alive.
+- The battle ends with a Mexican win if readiness is at least `0.70`, Texian side morale falls below `48`, Texian casualties exceed `350`, and more than `300` Mexicans are still present.
+- The battle also ends with a Mexican win if fewer than `100` Texians remain while more than `400` Mexicans are still present.
+- Independent stop conditions also end the battle if either side is wiped out, or once ticks exceed `650`.
+
 ## Core rules (human summary)
 
 ### Movement
@@ -94,6 +112,21 @@ The battle uses a phase system:
 ### Morale and state changes
 - Nearby enemies, nearby allies, suppression, and phase context affect morale.
 - Lower morale shifts units from `fighting` to `shaken`, then `routing`.
+
+### Exact individual state transition numbers
+
+- Texians only use two morale-based states: `fighting` and `shaken`.
+- A Texian becomes `shaken` once morale falls below `22`.
+- A shaken Texian rallies back to `fighting` once morale rises above `38`, but only if the battle is not already in `collapse` or `rout`.
+- Mexicans do not suffer morale decay before the ridgeline is breached; that is a hard gating rule in the model.
+- Mexican morale thresholds depend on `fatigue-modifier`, which is `cos-fatigue / 100` for Cos' troops and `0` for the main Mexican body.
+- Mexican `shaken` threshold is `20 + (fatigue-modifier * 6)`.
+- That means the main body shakes below `20`, while fully fatigued Cos troops shake below `26`.
+- Mexican `routing` threshold is `12 + (fatigue-modifier * 5)`.
+- That means the main body routes below `12`, while fully fatigued Cos troops route below `17`.
+- Mexican rally threshold is `32 + (fatigue-modifier * 5)`, and rally only happens from `shaken` back to `fighting` during `contested`.
+- That means the main body rallies above `32`, while fully fatigued Cos troops need morale above `37`.
+- Once a Mexican unit reaches `routing`, the model does not use a morale threshold to restore it to `fighting`; routing is effectively terminal unless the unit is later removed by death or capture.
 
 ### Capture logic
 - During collapse/rout, Mexican units near Texians and with low morale are increasingly likely to surrender/be captured.
