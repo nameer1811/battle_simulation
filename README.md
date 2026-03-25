@@ -4,7 +4,7 @@
 
 What changes if the Mexican camp is more concentrated and if General Cos' reinforcements arrive less exhausted?
 
-This repo is built around a single canonical model file: `san_jacinto_battle.nlogox`.
+This repo is built around a single canonical model file: `models/san_jacinto_battle.nlogox`.
 
 ## Why this model is interesting
 
@@ -146,7 +146,7 @@ If you are evaluating a hypothesis, compare many runs. Single runs are too noisy
 
 ### Interactive NetLogo run
 
-Open `san_jacinto_battle.nlogox` in NetLogo 7.x and use the UI:
+Open `models/san_jacinto_battle.nlogox` in NetLogo 7.x and use the UI:
 
 - set `mexican-concentration`,
 - set `cos-fatigue`,
@@ -171,7 +171,7 @@ docker run --rm \
   battle-sim
 ```
 
-That executes the configurations baked into `run-batch-parallel.sh`:
+That executes the configurations baked into `scripts/run-batch-parallel.sh`:
 
 - `0 100`
 - `50 100`
@@ -183,8 +183,8 @@ Run a single configuration:
 ```bash
 docker run --rm \
   -v "$PWD/output:/app/output" \
-  --entrypoint /app/run-batch-sim.sh \
-  -e MODEL_FILE=/app/san_jacinto_battle_headless.nlogox \
+  --entrypoint /app/scripts/run-batch-sim.sh \
+  -e MODEL_FILE=/app/build/san_jacinto_battle_headless.nlogox \
   -e OUTPUT_FILE=/app/output/batch-results.csv \
   -e RUNS=10 \
   -e MEXICAN_CONCENTRATION=100 \
@@ -192,6 +192,11 @@ docker run --rm \
   -e TIME_LIMIT_STEPS=600 \
   battle-sim
 ```
+
+The batch scripts keep generated artifacts in `build/`:
+
+- `build/san_jacinto_battle_headless.nlogox`: headless-safe model file
+- `build/classes/BatchRunner.class`: compiled Java runner classes
 
 ## Output schema
 
@@ -211,12 +216,13 @@ The batch runner writes CSV rows with:
 
 ## Repo layout
 
-- `san_jacinto_battle.nlogox`: the model
-- `BatchRunner.java`: Java headless runner
-- `run-batch-sim.sh`: one-config batch script
-- `run-batch-parallel.sh`: multi-config benchmark script
+- `models/`: canonical NetLogo model source
+- `src/`: Java headless runner source
+- `scripts/`: batch scripts and shared bootstrap logic
+- `docs/`: longer model notes and backlog items
 - `Dockerfile`: reproducible headless runtime
-- `SAN_JACINTO_MODEL_GUIDE.md`: longer plain-language guide
+- `build/`: generated headless model and compiled classes (ignored by Git)
+- `docs/SAN_JACINTO_MODEL_GUIDE.md`: longer plain-language guide
 - `AGENTS.md`: repo-specific agent instructions
 
 ## Caveats

@@ -19,7 +19,10 @@ public class BatchRunner {
     int cosFatigue = Integer.parseInt(args[4]);
     int timeLimitSteps = Integer.parseInt(args[5]);
 
-    Files.createDirectories(outputPath.getParent());
+    Path outputParent = outputPath.toAbsolutePath().getParent();
+    if (outputParent != null) {
+      Files.createDirectories(outputParent);
+    }
     long startedAt = System.currentTimeMillis();
     System.out.printf(
         Locale.US,

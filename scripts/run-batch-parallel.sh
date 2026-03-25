@@ -1,22 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${NETLOGO_HOME:=/opt/NetLogo 7.0.3}"
-: "${MODEL_FILE:=/app/san_jacinto_battle_headless.nlogox}"
-: "${OUTPUT_DIR:=/app/output}"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "${SCRIPT_DIR}/common.sh"
+
+: "${MODEL_FILE:=${HEADLESS_MODEL_FILE}}"
 : "${RUNS:=50}"
 : "${TIME_LIMIT_STEPS:=600}"
-: "${NETLOGO_JAR:=${NETLOGO_HOME}/lib/app/netlogo-7.0.3.jar}"
 
 # Use all available CPUs for parallel runs
-MAX_JOBS=$(nproc 2>/dev/null || echo 4)
+MAX_JOBS=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
-mkdir -p "${OUTPUT_DIR}"
+ensure_batch_artifacts
 
-if [[ -n "${JAVA_HOME:-}" ]]; then
-  java_bin="${JAVA_HOME}/bin/java"
-else
-  java_bin="java"
+if ! java_bin=$(resolve_java_bin); then
+  printf 'java not found. Install Java 17 or set JAVA_HOME.\n' >&2
+  exit 1
 fi
 
 # JVM flags for max parallelism
@@ -39,7 +38,7 @@ run_config() {
   local outfile="${OUTPUT_DIR}/batch-${conc}-${fatigue}.csv"
   echo "[${conc}/${fatigue}] Starting -> ${outfile}"
   "${java_bin}" "${JVM_OPTS[@]}" \
-    --class-path "${NETLOGO_JAR}:/app" \
+    --class-path "${NETLOGO_JAR}:${BATCH_RUNNER_CLASS_DIR}" \
     BatchRunner \
     "${MODEL_FILE}" \
     "${outfile}" \
@@ -56,7 +55,9 @@ for cfg in "${CONFIGS[@]}"; do
   read -r conc fatigue <<< "$cfg"
   run_config "$conc" "$fatigue" &
   pids+=($!)
-  while [[ $(jobs -r | wc -l) -ge ${MAX_JOBS} ]] 2>/dev/null; do wait -n 2>/dev/null; done
+  while [[ $(jobs -pr | wc -l | tr -d ' ') -ge ${MAX_JOBS} ]] 2>/dev/null; do
+    wait -n 2>/dev/null
+  done
 done
 for pid in "${pids[@]}"; do wait "$pid"; done
 
