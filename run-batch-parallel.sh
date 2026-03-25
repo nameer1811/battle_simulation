@@ -2,7 +2,7 @@
 set -euo pipefail
 
 : "${NETLOGO_HOME:=/opt/NetLogo 7.0.3}"
-: "${MODEL_FILE:=/app/final_model_v2_headless.nlogox}"
+: "${MODEL_FILE:=/app/san_jacinto_battle_headless.nlogox}"
 : "${OUTPUT_DIR:=/app/output}"
 : "${RUNS:=50}"
 : "${TIME_LIMIT_STEPS:=600}"

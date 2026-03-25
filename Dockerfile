@@ -5,7 +5,7 @@ ARG NETLOGO_ARCHIVE=NetLogo-${NETLOGO_VERSION}-64.tgz
 
 ENV APP_HOME=/app \
     NETLOGO_HOME="/opt/NetLogo ${NETLOGO_VERSION}" \
-    MODEL_FILE=/app/final_model_v2_headless.nlogox \
+    MODEL_FILE=/app/san_jacinto_battle_headless.nlogox \
     OUTPUT_DIR=/app/output \
     OUTPUT_FILE=/app/output/batch-results.csv \
     RUNS=50 \
@@ -24,13 +24,13 @@ RUN curl -L "https://github.com/NetLogo/NetLogo/releases/download/v${NETLOGO_VER
     && tar -xzf /tmp/netlogo.tgz -C /opt \
     && rm /tmp/netlogo.tgz
 
-COPY final_model_v2.nlogox /app/final_model_v2.nlogox
+COPY san_jacinto_battle.nlogox /app/san_jacinto_battle.nlogox
 COPY BatchRunner.java /app/BatchRunner.java
 COPY run-batch-sim.sh /app/run-batch-sim.sh
 COPY run-batch-parallel.sh /app/run-batch-parallel.sh
 
 RUN chmod +x /app/run-batch-sim.sh /app/run-batch-parallel.sh \
-    && sed '/<experiments>/,/<\/experiments>/d' /app/final_model_v2.nlogox > /app/final_model_v2_headless.nlogox \
+    && sed '/<experiments>/,/<\/experiments>/d' /app/san_jacinto_battle.nlogox > /app/san_jacinto_battle_headless.nlogox \
     && javac -cp "/opt/NetLogo 7.0.3/lib/app/netlogo-7.0.3.jar" /app/BatchRunner.java \
     && mkdir -p /app/output
 

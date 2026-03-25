@@ -2,7 +2,7 @@
 set -euo pipefail
 
 : "${NETLOGO_HOME:=/opt/NetLogo 7.0.3}"
-: "${MODEL_FILE:=/app/final_model_v2.nlogox}"
+: "${MODEL_FILE:=/app/san_jacinto_battle.nlogox}"
 : "${OUTPUT_DIR:=/app/output}"
 : "${OUTPUT_FILE:=${OUTPUT_DIR}/batch-results.csv}"
 : "${RUNS:=50}"

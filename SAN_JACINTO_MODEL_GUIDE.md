@@ -1,6 +1,6 @@
-# San Jacinto V2 Model Guide
+# San Jacinto Model Guide
 
-This guide explains the `final_model_v2.nlogox` simulation in plain language.
+This guide explains the `san_jacinto_battle.nlogox` simulation in plain language.
 
 ## What this model is trying to answer
 

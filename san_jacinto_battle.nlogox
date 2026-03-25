@@ -80,7 +80,7 @@ to-report battle-time
   report (word mins "m " secs "s")
 end
 
-to setup-patches-v2
+to setup-patches
   ;; ── Base prairie ──
   ask patches [
     set terrain-type "open"
@@ -375,7 +375,7 @@ to setup-patches-v2
   ]
 end
 
-to setup-troops-v2
+to setup-troops
   let readiness (mexican-concentration / 100)
   let fatigue-norm (cos-fatigue / 100)
 
@@ -929,7 +929,7 @@ to resolve-melee
   ]
 end
 
-to fire-cannons-v2
+to fire-cannons
   if not ridgeline-breached? [ stop ]
 
   ask mexican-cannons [
@@ -1104,8 +1104,8 @@ to setup
   set surprise-ticks 34 - round (mexican-concentration / 6)
   if surprise-ticks < 12 [ set surprise-ticks 12 ]
 
-  setup-patches-v2
-  setup-troops-v2
+  setup-patches
+  setup-troops
   calculate-side-morale
   reset-ticks
 end
@@ -1125,7 +1125,7 @@ to go
       set battle-phase "contested"
     ]
   ]
-  fire-cannons-v2
+  fire-cannons
   resolve-firefight
   resolve-melee
   resolve-rout-and-surrender
@@ -1230,7 +1230,7 @@ You can also run repeated stochastic trials from the Command Center:
 
 ## CREDITS AND REFERENCES
 
-Built as a v2 extension of a San Jacinto NetLogo classroom model.
+Built as a San Jacinto NetLogo classroom model focused on scenario testing.
 </info>
   <turtleShapes>
     <shape name="default" rotatable="true" editableColorIndex="0">
