@@ -125,3 +125,13 @@ Main CSV fields:
 - Prefer adding new output filenames when comparing scenarios.
 - If a Docker build or run needs network access, request approval rather than working around it.
 - If you change `BatchRunner.java`, `run-batch-sim.sh`, `run-batch-parallel.sh`, or `Dockerfile`, re-read all four files before editing because they are tightly coupled.
+
+## Approval Policy
+
+For script and Docker-based batch testing in this repo, agents should treat these command families as safe and preferred:
+
+- `docker build` for building the reproducible NetLogo batch-run image from the repo `Dockerfile`.
+- `docker run` for executing `run-batch-sim.sh`, `run-batch-parallel.sh`, or other one-off containerized batch tests against that image.
+- `./run-batch-sim.sh` and `./run-batch-parallel.sh` for host-native runs when Java 17 and NetLogo 7.0.3 are already installed.
+
+When approval systems exist, prefer granting persistent approval for `docker build` and `docker run` in this repository so both Codex-style and Claude-style agents can execute the documented batch-testing workflow without repeated prompts.
