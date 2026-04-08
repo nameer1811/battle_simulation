@@ -27,7 +27,8 @@ The `mexican-concentration` and `cos-fatigue` sliders are the test variables.
 - Placement depends on `mexican-concentration`:
   - higher concentration = more tight formation,
   - lower concentration = more dispersed camp layout.
-- Cos' troops are placed at the camp periphery (less integrated into positions), especially at high fatigue.
+- Cos' troops are placed on the Mexican right / northern rear of camp, not on the southern cavalry-contact flank.
+- At high fatigue they remain less integrated into the main camp positions, so more of them still begin dispersed.
 - Have command delay (activation delay), morale, and state (`fighting`, `shaken`, `routing`).
 - Can be captured during rout/collapse dynamics.
 
@@ -178,6 +179,8 @@ Interface monitors include:
 - `Battle Duration`
 - `Battle Phase`
 
+In batch CSV output, `battle_duration_minutes` is exported in minutes rather than raw ticks. The underlying model timing still uses ticks internally, with `1 tick = 6 seconds`.
+
 For your hypothesis, compare distributions (many runs), not one run.
 
 ## Suggested experiment workflow
@@ -196,6 +199,25 @@ For your hypothesis, compare distributions (many runs), not one run.
 ### 2D interaction sweep
 1. Sweep both sliders simultaneously (e.g., each at 0, 25, 50, 75, 100).
 2. Look for nonlinear interaction effects — does rested Cos + high concentration create a qualitatively different outcome?
+3. For a hand-picked matrix of interesting cases, use `scripts/run-batch-parallel.sh` with `CONFIG_PAIRS` or `CONFIG_FILE` rather than editing the script.
+
+Example custom pair file:
+
+```text
+20 50
+70 - 40
+85,15
+100:0
+```
+
+Then run:
+
+```bash
+CONFIG_FILE="$PWD/configs/custom-pairs.example.txt" \
+MAX_JOBS=8 \
+RUNS=200 \
+./scripts/run-batch-parallel.sh
+```
 
 From the Command Center, you can run batch trials with:
 

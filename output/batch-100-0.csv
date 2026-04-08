@@ -1,6 +1,4 @@
-run,mexican_concentration,cos_fatigue,texian_casualties,mexican_casualties,mexican_captured,cos_remaining,battle_duration,texian_side_morale,mexican_side_morale,texian_win
-1,100,0,839.0,188.0,0.0,429.0,220.0,76.61684340151261,98.02301672058226,false
-2,100,0,840.0,193.0,0.0,420.0,236.0,79.89399288286741,98.53961502471346,false
-3,100,0,838.0,194.0,0.0,424.0,227.0,76.89934539735032,97.04352021103625,false
-4,100,0,841.0,167.0,0.0,431.0,231.0,76.70894572740544,97.79118522364273,false
-5,100,0,837.0,197.0,0.0,435.0,243.0,85.93147116829036,98.37784313181463,false
+run,mexican_concentration,cos_fatigue,texian_casualties,mexican_casualties,mexican_captured,cos_remaining,battle_duration_minutes,texian_side_morale,mexican_side_morale,texian_win
+1,100,0,847.0,49.0,0.0,500.0,21.4,77.89008568141372,98.51900303282025,false
+2,100,0,847.0,135.0,0.0,495.0,21.6,75.79813295886362,98.08769905706633,false
+3,100,0,836.0,167.0,0.0,496.0,24.0,80.13656705449019,99.246534190759,false

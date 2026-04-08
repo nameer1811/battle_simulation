@@ -43,6 +43,10 @@ Higher `cos-fatigue` means Cos' 500 men:
 - break sooner and rally less easily,
 - are less integrated into concentrated positions even when overall readiness is high.
 
+Deployment note:
+
+- Cos' men are staged on the Mexican right / northern rear of camp, not hard-wired into the southern flank that Lamar's cavalry sweeps first.
+
 ### 2. The map is doing real work
 
 🌾 The battlefield is not flat open space.
@@ -157,6 +161,8 @@ Open `models/san_jacinto_battle.nlogox` in NetLogo 7.x and use the UI:
 
 🧪 This is the preferred scripted test path.
 
+It is also the easiest cross-platform path. On Windows, use Docker Desktop and the same container commands shown below rather than trying to run the Bash scripts directly in CMD or PowerShell.
+
 Build:
 
 ```bash
@@ -171,12 +177,56 @@ docker run --rm \
   battle-sim
 ```
 
-That executes the configurations baked into `scripts/run-batch-parallel.sh`:
+That executes the default 3×3 benchmark matrix baked into `scripts/run-batch-parallel.sh`:
 
+- `0 0`
+- `0 50`
 - `0 100`
+- `50 0`
+- `50 50`
 - `50 100`
-- `100 100`
 - `100 0`
+- `100 50`
+- `100 100`
+
+Run a larger custom config list by passing either `CONFIG_PAIRS` or `CONFIG_FILE`.
+
+Mac/Linux example with inline pairs:
+
+```bash
+docker run --rm \
+  -v "$PWD/output:/app/output" \
+  -e MAX_JOBS="$(sysctl -n hw.ncpu 2>/dev/null || nproc)" \
+  -e RUNS=200 \
+  -e CONFIG_PAIRS="20-50, 70-40, 85-15, 100-0" \
+  battle-sim
+```
+
+Cross-platform example using a mounted text file:
+
+```bash
+docker run --rm \
+  -v "$PWD/output:/app/output" \
+  -v "$PWD/configs:/app/configs" \
+  -e MAX_JOBS=12 \
+  -e RUNS=200 \
+  -e CONFIG_FILE=/app/configs/custom-pairs.example.txt \
+  battle-sim
+```
+
+PowerShell example on Windows:
+
+```powershell
+docker run --rm `
+  -v "${PWD}/output:/app/output" `
+  -v "${PWD}/configs:/app/configs" `
+  -e MAX_JOBS=12 `
+  -e RUNS=200 `
+  -e CONFIG_FILE=/app/configs/custom-pairs.example.txt `
+  battle-sim
+```
+
+`CONFIG_FILE` accepts one pair per line and tolerates Windows CRLF line endings. Valid separators between the two values include spaces, commas, colons, and hyphens. For `CONFIG_PAIRS`, separate pairs with commas or semicolons and separate the two values inside a pair with spaces, colons, or hyphens.
 
 Run a single configuration:
 
@@ -192,6 +242,45 @@ docker run --rm \
   -e TIME_LIMIT_STEPS=600 \
   battle-sim
 ```
+
+### Grid sweep for analytics (500 runs per config)
+
+Run all combinations of `mexican-concentration` and `cos-fatigue` at a configurable step interval:
+
+```bash
+docker run --rm \
+  -v "$PWD/output:/app/output" \
+  --entrypoint /app/scripts/run-grid-sweep.sh \
+  -e RUNS=500 \
+  -e GRID_STEP=10 \
+  battle-sim
+```
+
+`GRID_STEP=10` produces an 11×11 = 121-configuration grid. With `RUNS=500`, that is 60,500 total simulations. Each config writes its own CSV to `output/`.
+
+If you want arbitrary hand-picked pairs like `20-50`, `70-40`, and `85-15`, use `run-batch-parallel.sh` with `CONFIG_PAIRS` or `CONFIG_FILE`. If you want a full dense matrix, use `run-grid-sweep.sh`.
+
+For a faster first pass use `GRID_STEP=20` (36 configs × 500 = 18,000 runs).
+
+After the sweep finishes, analyze and plot the results:
+
+```bash
+pip install pandas matplotlib seaborn
+python scripts/analyze_results.py --output-dir output --plots-dir output/plots
+```
+
+This writes `output/summary.csv` (one aggregated row per config) and heatmap PNGs in `output/plots/`.
+
+Key environment variables for the grid sweep:
+
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `RUNS` | `500` | Repetitions per config |
+| `GRID_STEP` | `10` | Step between parameter values (0, step, 2×step, … 100) |
+| `MAX_PARALLEL` | CPU count | Concurrent JVM processes |
+| `MAX_JOBS` | alias of `MAX_PARALLEL` | Alternate name for concurrent JVM processes |
+| `OUTPUT_DIR` | `output` | Where per-config CSVs are written |
+| `TIME_LIMIT_STEPS` | `600` | Hard step cap per simulation run |
 
 The batch scripts keep generated artifacts in `build/`:
 
@@ -209,10 +298,12 @@ The batch runner writes CSV rows with:
 - `mexican_casualties`
 - `mexican_captured`
 - `cos_remaining`
-- `battle_duration`
+- `battle_duration_minutes`
 - `texian_side_morale`
 - `mexican_side_morale`
 - `texian_win`
+
+For batch CSV output, duration is exported in minutes. The model uses `1 tick = 6 seconds`, so the exporter converts ticks to minutes by dividing `battle-duration` by `10`.
 
 ## Repo layout
 

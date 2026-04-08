@@ -1,0 +1,6 @@
+# One config per line: mexican_concentration separator cos_fatigue
+# Valid separators include spaces, commas, colons, or hyphens.
+20 50
+70 - 40
+85,15
+100:0

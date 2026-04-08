@@ -37,7 +37,7 @@ public class BatchRunner {
     try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(outputPath))) {
       workspace.open(modelPath);
       writer.println(
-          "run,mexican_concentration,cos_fatigue,texian_casualties,mexican_casualties,mexican_captured,cos_remaining,battle_duration,texian_side_morale,mexican_side_morale,texian_win");
+          "run,mexican_concentration,cos_fatigue,texian_casualties,mexican_casualties,mexican_captured,cos_remaining,battle_duration_minutes,texian_side_morale,mexican_side_morale,texian_win");
 
       for (int run = 1; run <= runs; run++) {
         long runStartedAt = System.currentTimeMillis();
@@ -66,7 +66,7 @@ public class BatchRunner {
             csvValue(workspace.report("mexican-casualties")),
             csvValue(workspace.report("mexican-captured")),
             csvValue(workspace.report("count mexicans with [is-cos-troop?]")),
-            csvValue(workspace.report("battle-duration")),
+            csvValue(workspace.report("battle-duration / 10")),
             csvValue(workspace.report("texian-side-morale")),
             csvValue(workspace.report("mexican-side-morale")),
             csvValue(workspace.report("texian-win?")));
