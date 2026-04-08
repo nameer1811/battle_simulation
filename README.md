@@ -43,6 +43,10 @@ Higher `cos-fatigue` means Cos' 500 men:
 - break sooner and rally less easily,
 - are less integrated into concentrated positions even when overall readiness is high.
 
+Deployment note:
+
+- Cos' men are staged on the Mexican right / northern rear of camp, not hard-wired into the southern flank that Lamar's cavalry sweeps first.
+
 ### 2. The map is doing real work
 
 🌾 The battlefield is not flat open space.

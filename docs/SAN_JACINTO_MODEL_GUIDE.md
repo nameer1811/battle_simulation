@@ -27,7 +27,8 @@ The `mexican-concentration` and `cos-fatigue` sliders are the test variables.
 - Placement depends on `mexican-concentration`:
   - higher concentration = more tight formation,
   - lower concentration = more dispersed camp layout.
-- Cos' troops are placed at the camp periphery (less integrated into positions), especially at high fatigue.
+- Cos' troops are placed on the Mexican right / northern rear of camp, not on the southern cavalry-contact flank.
+- At high fatigue they remain less integrated into the main camp positions, so more of them still begin dispersed.
 - Have command delay (activation delay), morale, and state (`fighting`, `shaken`, `routing`).
 - Can be captured during rout/collapse dynamics.
 
