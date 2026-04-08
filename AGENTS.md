@@ -14,6 +14,8 @@ If you change the model or batch-testing workflow, you must review and update ev
 - `src/BatchRunner.java`: headless Java runner that opens the model, runs `setup`/`go`, and writes CSV output.
 - `scripts/run-batch-sim.sh`: runs one batch configuration.
 - `scripts/run-batch-parallel.sh`: runs several benchmark configurations in parallel.
+- `scripts/run-grid-sweep.sh`: runs a full grid sweep over all (mexican-concentration × cos-fatigue) combinations.
+- `scripts/analyze_results.py`: merges grid sweep CSVs and generates summary stats and heatmap PNGs.
 - `scripts/common.sh`: shared path/bootstrap logic for the shell runners.
 - `Dockerfile`: reproducible way to build the headless runner environment.
 - `build/`: generated headless model plus compiled Java classes.
@@ -75,7 +77,9 @@ Useful environment variables:
 - `COS_FATIGUE`: slider value from 0 to 100.
 - `TIME_LIMIT_STEPS`: hard stop for runaway simulations.
 - `OUTPUT_FILE`: destination CSV for single-config runs.
-- `OUTPUT_DIR`: destination directory for parallel runs.
+- `OUTPUT_DIR`: destination directory for parallel/grid runs.
+- `GRID_STEP`: step size for grid sweep (default 10; 0,10,...,100 → 11×11=121 configs).
+- `MAX_PARALLEL`: max concurrent JVM processes for grid sweep (default: nproc).
 
 ## Host-Native Run
 
@@ -138,5 +142,6 @@ For script and Docker-based batch testing in this repo, agents should treat thes
 - `docker build` for building the reproducible NetLogo batch-run image from the repo `Dockerfile`.
 - `docker run` for executing `scripts/run-batch-sim.sh`, `scripts/run-batch-parallel.sh`, or other one-off containerized batch tests against that image.
 - `./scripts/run-batch-sim.sh` and `./scripts/run-batch-parallel.sh` for host-native runs when Java 17 and NetLogo 7.0.3 are already installed.
+- `./scripts/run-grid-sweep.sh` for full-grid sweeps (host-native or Docker).
 
 When approval systems exist, prefer granting persistent approval for `docker build` and `docker run` in this repository so both Codex-style and Claude-style agents can execute the documented batch-testing workflow without repeated prompts.

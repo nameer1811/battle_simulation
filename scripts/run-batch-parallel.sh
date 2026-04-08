@@ -5,7 +5,7 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source "${SCRIPT_DIR}/common.sh"
 
 : "${MODEL_FILE:=${HEADLESS_MODEL_FILE}}"
-: "${RUNS:=50}"
+: "${RUNS:=500}"
 : "${TIME_LIMIT_STEPS:=600}"
 
 # Use all available CPUs for parallel runs
@@ -25,12 +25,17 @@ JVM_OPTS=(
   "-XX:+UseParallelGC"
 )
 
-# Benchmark configs: (mexican_concentration cos_fatigue) — historic baseline and sweeps
+# Benchmark configs: (mexican_concentration cos_fatigue) — 3×3 grid of {0,50,100} values
 CONFIGS=(
-  "0 100"    # Surprise rout baseline (historic)
-  "50 100"   # Mid concentration
-  "100 100"  # Max concentration, fatigued Cos
-  "100 0"    # Max concentration, rested Cos (Mexican advantage)
+  "0 0"     # No concentration, rested Cos
+  "0 50"    # No concentration, mid fatigue
+  "0 100"   # No concentration, fatigued Cos (historic surprise baseline)
+  "50 0"    # Mid concentration, rested Cos
+  "50 50"   # Mid concentration, mid fatigue
+  "50 100"  # Mid concentration, fatigued Cos
+  "100 0"   # Full concentration, rested Cos
+  "100 50"  # Full concentration, mid fatigue
+  "100 100" # Full concentration, fatigued Cos
 )
 
 run_config() {

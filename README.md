@@ -193,6 +193,42 @@ docker run --rm \
   battle-sim
 ```
 
+### Grid sweep for analytics (500 runs per config)
+
+Run all combinations of `mexican-concentration` and `cos-fatigue` at a configurable step interval:
+
+```bash
+docker run --rm \
+  -v "$PWD/output:/app/output" \
+  --entrypoint /app/scripts/run-grid-sweep.sh \
+  -e RUNS=500 \
+  -e GRID_STEP=10 \
+  battle-sim
+```
+
+`GRID_STEP=10` produces an 11×11 = 121-configuration grid. With `RUNS=500`, that is 60,500 total simulations. Each config writes its own CSV to `output/grid/`.
+
+For a faster first pass use `GRID_STEP=20` (36 configs × 500 = 18,000 runs).
+
+After the sweep finishes, analyze and plot the results:
+
+```bash
+pip install pandas matplotlib seaborn
+python scripts/analyze_results.py --output-dir output/grid --plots-dir output/plots
+```
+
+This writes `output/grid/summary.csv` (one aggregated row per config) and heatmap PNGs in `output/plots/`.
+
+Key environment variables for the grid sweep:
+
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `RUNS` | `500` | Repetitions per config |
+| `GRID_STEP` | `10` | Step between parameter values (0, step, 2×step, … 100) |
+| `MAX_PARALLEL` | `nproc` | Concurrent JVM processes |
+| `OUTPUT_DIR` | `output/grid` | Where per-config CSVs are written |
+| `TIME_LIMIT_STEPS` | `600` | Hard step cap per simulation run |
+
 The batch scripts keep generated artifacts in `build/`:
 
 - `build/san_jacinto_battle_headless.nlogox`: headless-safe model file
