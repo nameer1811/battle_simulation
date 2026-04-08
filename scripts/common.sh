@@ -13,6 +13,68 @@ REPO_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
 : "${NETLOGO_HOME:=/opt/NetLogo 7.0.3}"
 : "${NETLOGO_JAR:=${NETLOGO_HOME}/lib/app/netlogo-7.0.3.jar}"
 
+resolve_cpu_count() {
+  local cpu_count
+
+  cpu_count=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+  if [[ ! "${cpu_count}" =~ ^[0-9]+$ ]] || (( cpu_count < 1 )); then
+    cpu_count=4
+  fi
+
+  printf '%s\n' "${cpu_count}"
+}
+
+resolve_parallel_job_count() {
+  local requested=${1:-} cpu_count
+
+  if [[ -n "${requested}" ]]; then
+    if [[ ! "${requested}" =~ ^[0-9]+$ ]] || (( requested < 1 )); then
+      printf 'Parallel job count must be a positive integer. Got: %s\n' "${requested}" >&2
+      exit 1
+    fi
+
+    printf '%s\n' "${requested}"
+    return 0
+  fi
+
+  resolve_cpu_count
+}
+
+compute_gc_threads_per_job() {
+  local cpu_count=$1 max_jobs=$2 gc_threads
+
+  gc_threads=$(( cpu_count / max_jobs ))
+  if (( gc_threads < 1 )); then
+    gc_threads=1
+  elif (( gc_threads > 4 )); then
+    gc_threads=4
+  fi
+
+  printf '%s\n' "${gc_threads}"
+}
+
+wait_for_available_slot() {
+  local max_jobs=$1 poll_interval=${2:-0.1} active_jobs
+
+  while true; do
+    active_jobs=$(jobs -pr | wc -l | tr -d ' ')
+    if (( active_jobs < max_jobs )); then
+      return 0
+    fi
+
+    sleep "${poll_interval}"
+  done
+}
+
+validate_slider_value() {
+  local name=$1 value=$2
+
+  if [[ ! "${value}" =~ ^[0-9]+$ ]] || (( value < 0 || value > 100 )); then
+    printf '%s must be an integer between 0 and 100. Got: %s\n' "${name}" "${value}" >&2
+    exit 1
+  fi
+}
+
 resolve_java_bin() {
   if [[ -n "${JAVA_HOME:-}" ]]; then
     printf '%s\n' "${JAVA_HOME}/bin/java"

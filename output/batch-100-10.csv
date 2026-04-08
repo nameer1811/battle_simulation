@@ -1,0 +1,4 @@
+run,mexican_concentration,cos_fatigue,texian_casualties,mexican_casualties,mexican_captured,cos_remaining,battle_duration_minutes,texian_side_morale,mexican_side_morale,texian_win
+1,100,10,838.0,195.0,0.0,499.0,22.2,77.38867707980704,99.22276437034682,false
+2,100,10,836.0,194.0,0.0,497.0,30.5,95.39190071776517,99.28892986096676,false
+3,100,10,838.0,105.0,0.0,498.0,21.8,76.16469163034387,98.2667948838163,false

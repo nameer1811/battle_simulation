@@ -13,7 +13,7 @@ If you change the model or batch-testing workflow, you must review and update ev
 - `models/san_jacinto_battle.nlogox`: canonical NetLogo model.
 - `src/BatchRunner.java`: headless Java runner that opens the model, runs `setup`/`go`, and writes CSV output.
 - `scripts/run-batch-sim.sh`: runs one batch configuration.
-- `scripts/run-batch-parallel.sh`: runs several benchmark configurations in parallel.
+- `scripts/run-batch-parallel.sh`: runs several benchmark configurations in parallel, or a larger custom pair list from `CONFIG_PAIRS` / `CONFIG_FILE`.
 - `scripts/run-grid-sweep.sh`: runs a full grid sweep over all (mexican-concentration × cos-fatigue) combinations.
 - `scripts/analyze_results.py`: merges grid sweep CSVs and generates summary stats and heatmap PNGs.
 - `scripts/common.sh`: shared path/bootstrap logic for the shell runners.
@@ -44,12 +44,24 @@ docker run --rm \
   battle-sim
 ```
 
-That runs these configurations from `scripts/run-batch-parallel.sh`:
+That runs the default 3×3 benchmark matrix from `scripts/run-batch-parallel.sh`:
 
+- `0 0`
+- `0 50`
 - `0 100`
+- `50 0`
+- `50 50`
 - `50 100`
-- `100 100`
 - `100 0`
+- `100 50`
+- `100 100`
+
+To run a larger hand-picked batch, pass either:
+
+- `CONFIG_PAIRS`, for example `20-50, 70-40, 85-15, 100-0`
+- `CONFIG_FILE`, pointing at a text file with one pair per line
+
+`CONFIG_FILE` accepts Windows CRLF line endings. Valid separators inside each pair include spaces, commas, colons, and hyphens. For `CONFIG_PAIRS`, separate pairs with commas or semicolons and separate the two values inside a pair with spaces, colons, or hyphens.
 
 Each config writes its own CSV into `output/`.
 
@@ -79,11 +91,14 @@ Useful environment variables:
 - `OUTPUT_FILE`: destination CSV for single-config runs.
 - `OUTPUT_DIR`: destination directory for parallel/grid runs.
 - `GRID_STEP`: step size for grid sweep (default 10; 0,10,...,100 → 11×11=121 configs).
-- `MAX_PARALLEL`: max concurrent JVM processes for grid sweep (default: nproc).
+- `MAX_JOBS`: max concurrent JVM processes for `run-batch-parallel.sh` (default: detected CPU count).
+- `MAX_PARALLEL`: max concurrent JVM processes for grid sweep (default: detected CPU count). `MAX_JOBS` is accepted as an alias.
+- `CONFIG_PAIRS`: inline custom list for `run-batch-parallel.sh`.
+- `CONFIG_FILE`: path to a custom pair list file for `run-batch-parallel.sh`.
 
 ## Host-Native Run
 
-Only use this if Docker is not desired and the machine already has Java 17 and NetLogo 7.0.3 installed.
+Only use this if Docker is not desired and the machine already has Java 17 and NetLogo 7.0.3 installed. For Windows classmates, prefer Docker Desktop rather than host-native shell execution.
 
 1. Run one batch. The script will generate `build/san_jacinto_battle_headless.nlogox` and compile `src/BatchRunner.java` into `build/classes/` automatically if they are missing or stale:
 
@@ -108,6 +123,18 @@ TIME_LIMIT_STEPS=600 \
 ./scripts/run-batch-parallel.sh
 ```
 
+For a larger custom batch, use:
+
+```bash
+NETLOGO_HOME="/path/to/NetLogo 7.0.3" \
+OUTPUT_DIR="$PWD/output" \
+CONFIG_FILE="$PWD/configs/custom-pairs.example.txt" \
+MAX_JOBS=8 \
+RUNS=200 \
+TIME_LIMIT_STEPS=600 \
+./scripts/run-batch-parallel.sh
+```
+
 Both scripts use the same NetLogo jar path and share the same `build/` cache.
 
 ## What To Check After A Run
@@ -123,10 +150,12 @@ Main CSV fields:
 - `mexican_casualties`
 - `mexican_captured`
 - `cos_remaining`
-- `battle_duration`
+- `battle_duration_minutes`
 - `texian_side_morale`
 - `mexican_side_morale`
 - `texian_win`
+
+`battle_duration_minutes` is exported in minutes. The underlying model uses `1 tick = 6 seconds`, so the batch runner converts ticks to minutes at export time.
 
 ## Agent Guardrails
 

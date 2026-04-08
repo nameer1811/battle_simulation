@@ -6,7 +6,7 @@ Usage:
     python scripts/analyze_results.py [--output-dir OUTPUT_DIR] [--plots-dir PLOTS_DIR]
 
 Defaults:
-    --output-dir  output/grid
+    --output-dir  output
     --plots-dir   output/plots
 """
 
@@ -25,7 +25,7 @@ METRICS = [
     "mexican_casualties",
     "mexican_captured",
     "cos_remaining",
-    "battle_duration",
+    "battle_duration_minutes",
     "texian_side_morale",
     "mexican_side_morale",
 ]
@@ -73,8 +73,8 @@ def save_heatmap(data: pd.DataFrame, title: str, path: str, fmt: str = ".2f", cm
 
 def main():
     parser = argparse.ArgumentParser(description="Analyze battle simulation grid sweep results.")
-    parser.add_argument("--output-dir", default=os.path.join("output", "grid"),
-                        help="Directory containing batch-*.csv files (default: output/grid)")
+    parser.add_argument("--output-dir", default="output",
+                        help="Directory containing batch-*.csv files (default: output)")
     parser.add_argument("--plots-dir", default=os.path.join("output", "plots"),
                         help="Directory to write PNG heatmaps (default: output/plots)")
     args = parser.parse_args()

@@ -491,16 +491,16 @@ to setup-troops
     set fatigue-modifier 0
   ]
 
-  ;; Cos' reinforcements — southern half of camp
+  ;; Cos' reinforcements — Mexican right / northern rear of camp
   let cos-total 500
   let cos-concentrated round (cos-total * readiness * (1 - fatigue-norm * 0.5))
   let cos-dispersed cos-total - cos-concentrated
 
-  ;; Cos concentrated: ellipse centered south of main camp
+  ;; Cos concentrated: ellipse centered on the northern rear/right wing sector
   create-mexicans cos-concentrated [
     set color violet + 2
     set shape "person"
-    place-in-camp 16 -28 20 20
+    place-in-camp 18 24 18 18
     set health 100
     set morale (46 + (readiness * 24) + random-float 10) - (22 * fatigue-norm)
     set state "fighting"
@@ -510,11 +510,11 @@ to setup-troops
     set fatigue-modifier fatigue-norm
   ]
 
-  ;; Cos dispersed: large ellipse covering south/rear of camp
+  ;; Cos dispersed: large ellipse covering the northern rear/right of camp
   create-mexicans cos-dispersed [
     set color violet + 2
     set shape "person"
-    place-in-camp 18 -34 24 28
+    place-in-camp 22 28 24 24
     set health 100
     set morale (40 + (readiness * 16) + random-float 10) - (22 * fatigue-norm)
     set state "fighting"
